@@ -35,10 +35,10 @@ import os
 
 __version__ = '0.2-dev'
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+#try:
+from urllib.parse import urlparse
+#except ImportError:
+    #from urlparse import urlparse
 
 from secrets import consumer_key, consumer_secret, access_token, access_token_secret
 
