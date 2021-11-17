@@ -19,42 +19,53 @@
 
 from __future__ import unicode_literals
 
-from ascii_graph import Pyasciigraph
+from ascii_graph import Pyasciigraph #그래프 그림
 from ascii_graph.colors import Gre, Yel, Red
 from ascii_graph.colordata import hcolor
-from tqdm import tqdm
-import tweepy
-import numpy
-import argparse
-import collections
-import datetime
-import re
-import json
+from tqdm import tqdm #진행률
+import tweepy#트위터
+import numpy#수치계산
+import argparse#명령줄
+import collections#컨테이너
+import datetime#시간
+import re#정규식
+import json#웹 데이터
 import sys
 import os
 
 __version__ = '0.2-dev'
 
+<<<<<<< HEAD
 #try:
 from urllib.parse import urlparse
 #except ImportError:
     #from urlparse import urlparse
+=======
+try:
+    from urllib.parse import urlparse#url
+except ImportError:
+    from urlparse import urlparse
+>>>>>>> 4517843be72b451019e17e5fed62eb3838df24b3
 
-from secrets import consumer_key, consumer_secret, access_token, access_token_secret
+from secrets import consumer_key, consumer_secret, access_token, access_token_secret #api key
 
 # Here are sglobals used to store data - I know it's dirty, whatever
-start_date = 0
-end_date = 0
-export = ""
-jsono = {}
-save_folder = "tweets"
-color_supported = True
-ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+start_date = 0#시작일
+end_date = 0#끝
+export = ""#?
+jsono = {}#json인듯? dictionary
+save_folder = "tweets"#저장 폴더
+color_supported = True#컬러?
+ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')#정규식인듯?
 
-
+"""class argparse.ArgumentParser(prog=None, usage=None, description=None, epilog=None, parents=[], formatter_class=argparse.HelpFormatter, 
+prefix_chars='-', fromfile_prefix_chars=None, argument_default=None, conflict_handler='error', add_help=True, allow_abbrev=True, exit_on_error=True)"""
 parser = argparse.ArgumentParser(description=
     "Simple Twitter Profile Analyzer (https://github.com/x0rz/tweets_analyzer) version %s" % __version__,
                                  usage='%(prog)s -n <screen_name> [options]')
+
+"""ArgumentParser.add_argument(name or flags...[, action][, nargs][, const][, default][, type][, choices][, required][, help][, metavar][, dest])"""
+#명령줄 관련
 parser.add_argument('-l', '--limit', metavar='N', type=int, default=1000,
                     help='limit the number of tweets to retreive (default=1000)')
 parser.add_argument('-n', '--name', required=True, metavar="screen_name",
@@ -90,29 +101,29 @@ parser.add_argument('--no-retweets', action='store_true',
 args = parser.parse_args()
 
 
-activity_hourly = {
+activity_hourly = {#?
     ("%2i:00" % i).replace(" ", "0"): 0 for i in range(24)
 }
 
-activity_weekly = {
+activity_weekly = {#?
     "%i" % i: 0 for i in range(7)
 }
+#hashable dictionary
+detected_langs = collections.Counter()#언어
+detected_sources = collections.Counter()#소스
+detected_places = collections.Counter()#장소?
+geo_enabled_tweets = 0 #?
+detected_hashtags = collections.Counter()#해시태그
+detected_domains = collections.Counter()#도메인
+detected_timezones = collections.Counter()#타임존
+retweets = 0#리트윗
+retweeted_users = collections.Counter()#리트윗 유저
+mentioned_users = collections.Counter()#맨션 유저
+id_screen_names = {}#아이디?
+friends_timezone = collections.Counter()#친구 시간대?
+friends_lang = collections.Counter()#친구 사용 언어
 
-detected_langs = collections.Counter()
-detected_sources = collections.Counter()
-detected_places = collections.Counter()
-geo_enabled_tweets = 0
-detected_hashtags = collections.Counter()
-detected_domains = collections.Counter()
-detected_timezones = collections.Counter()
-retweets = 0
-retweeted_users = collections.Counter()
-mentioned_users = collections.Counter()
-id_screen_names = {}
-friends_timezone = collections.Counter()
-friends_lang = collections.Counter()
-
-def process_tweet(tweet):
+def process_tweet(tweet): #트위처 계정 정보 수집?
     """ Processing a single Tweet and updating our datasets """
     global start_date
     global end_date
@@ -120,17 +131,17 @@ def process_tweet(tweet):
     global retweets
 
     if args.no_retweets:
-        if hasattr(tweet, 'retweeted_status'):
+        if hasattr(tweet, 'retweeted_status'):#속성 있는지
             return
         if hasattr(tweet, 'is_quote_status') and tweet.is_quote_status:
             return
 
     # Check for filters before processing any further
-    if args.filter and tweet.source:
-        if not args.filter.lower() in tweet.source.lower():
+    if args.filter and tweet.source: #명령줄에 필터 있고 트윗 소스 있음
+        if not args.filter.lower() in tweet.source.lower(): # 필터에 소스 없음
             return
 
-    tw_date = tweet.created_at
+    tw_date = tweet.created_at #?
 
     # Updating most recent tweet
     end_date = end_date or tw_date
@@ -193,20 +204,20 @@ def process_tweet(tweet):
                 id_screen_names[ht['id_str']] = "@%s" % ht['screen_name']
 
 
-def process_friend(friend):
+def process_friend(friend):# 친구 시간대와 언어 파악
     """ Process a single friend """
     friends_lang[friend.lang] += 1 # Getting friend language & timezone
     if friend.time_zone:
         friends_timezone[friend.time_zone] += 1
 
 
-def get_friends(api, username, limit):
+def get_friends(api, username, limit): #친구 데이터 파악하고 그것 진행사항 출력
     """ Download friends and process them """
     for friend in tqdm(tweepy.Cursor(api.friends, screen_name=username).items(limit), unit="friends", total=limit):
         process_friend(friend)
 
 
-def get_tweets(api, username, fh, limit):
+def get_tweets(api, username, fh, limit): #트윗 다운
     """ Download Tweets from username account """
     if args.json is False:
         for status in tqdm(tweepy.Cursor(api.user_timeline, screen_name=username).items(limit), unit="tw", total=limit):
@@ -219,11 +230,11 @@ def get_tweets(api, username, fh, limit):
             if args.save:
                 fh.write(str(json.dumps(status._json))+",")
 
-def int_to_weekday(day):
+def int_to_weekday(day): #요일 반환
     weekdays = "Monday Tuesday Wednesday Thursday Friday Saturday Sunday".split()
     return weekdays[int(day) % len(weekdays)]
 
-def supports_color():
+def supports_color(): #색 지원하는지? sys 
     if args.no_color:
         return False
     # copied from https://github.com/django/django/blob/master/django/core/management/color.py
@@ -235,19 +246,19 @@ def supports_color():
         return False
     return True
 
-def cprint(strng):
+def cprint(strng):#?
     if not color_supported:
         strng = ansi_escape.sub('', strng)
     if args.json is False:
         print(strng)
         export_string(strng)
 
-def export_string(strng):
+def export_string(strng):#?
     global export
     if args.export is not None:
         export+=strng+"\n"
 
-def export_write():
+def export_write():#?
     global export
     if args.export is not None:
         text_file = open(args.export, "w")
@@ -261,7 +272,7 @@ def export_write():
         text_file.write(export)
         text_file.close()
 
-def print_stats(dataset, top=5):
+def print_stats(dataset, top=5):#stats 출력
     """ Displays top values by order """
     sum = numpy.sum(list(dataset.values()))
     i = 0
@@ -283,7 +294,7 @@ def print_stats(dataset, top=5):
     cprint("")
 
 
-def print_charts(dataset, title, weekday=False):
+def print_charts(dataset, title, weekday=False):#차트 
     """ Prints nice charts based on a dict {(key, value), ...} """
     chart = []
     keys = sorted(dataset.keys())
@@ -324,14 +335,14 @@ def print_charts(dataset, title, weekday=False):
     cprint("")
 
 
-def main():
+def main():#main
     global color_supported
-    color_supported = supports_color()
-
+    color_supported = supports_color()#color
+    #key setting
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
     twitter_api = tweepy.API(auth)
-
+    #날짜, ?
     now = datetime.datetime.now()
     save_path = save_folder+"/"+args.name
     save_file = False
@@ -355,7 +366,7 @@ def main():
     jsono['user_geo_enabled'] = user_info.geo_enabled
     jsono['user_time_zone'] = user_info.time_zone
     jsono['user_utc_offset'] = user_info.utc_offset
-
+    #utc
     if user_info.utc_offset is None:
         cprint("[\033[91m!\033[0m] Can't get specific timezone for this user")
         jsono['user_utc_offset_note'] = "Can't get specific timezone for this user"
@@ -363,12 +374,12 @@ def main():
     if args.utc_offset:
         cprint("[\033[91m!\033[0m] Applying timezone offset %d (--utc-offset)" % args.utc_offset)
         jsono['user_utc_offset_set'] = "Applying timezone offset %d (--utc-offset)" % args.utc_offset
-
+    
     cprint("[+] statuses_count : \033[1m%s\033[0m" % user_info.statuses_count)
     jsono['status_count'] = user_info.statuses_count
 
     # Will retreive all Tweets from account (or max limit)
-    num_tweets = numpy.amin([args.limit, user_info.statuses_count])
+    num_tweets = numpy.amin([args.limit, user_info.statuses_count])#?
     cprint("[+] Retrieving last %d tweets..." % num_tweets)
     jsono['status_retrieving'] = num_tweets
 
